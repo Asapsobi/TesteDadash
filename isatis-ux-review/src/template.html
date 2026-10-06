@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>بررسی اولیه UX ایساتیس</title>
+<style>
+@font-face{font-family:"Vazirmatn";src:url(data:font/woff2;base64,{{FONT}}) format("woff2");font-weight:100 900;font-style:normal;font-display:swap}
+
+:root{
+  --canvas:#F2F3F5;
+  --surface:#FFFFFF;
+  --subtle:#F7F8FA;
+  --ink:#151821;
+  --ink-2:#3A414F;
+  --muted:#697080;
+  --faint:#9AA0AB;
+  --line:#E4E6EA;
+  --accent:#3550D0;
+  --accent-soft:#EEF1FC;
+  --mark:#F08C00;
+  --mark-soft:rgba(240,140,0,.2);
+  --review:#9A5B00;
+  --review-soft:#FFF4E3;
+  --bad:#C24141;
+  --bad-soft:#FBEEEE;
+  --good:#2E7A52;
+  --good-soft:#EAF5EF;
+  --radius:16px;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 10px 30px rgba(16,24,40,.06);
+}
+
+*{box-sizing:border-box}
+html{scroll-snap-type:y proximity;scroll-behavior:smooth;-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--canvas);color:var(--ink);font-family:"Vazirmatn",Tahoma,"Segoe UI",system-ui,sans-serif;font-size:16px;line-height:1.9;-webkit-font-smoothing:antialiased;counter-reset:slide}
+a{color:inherit;text-decoration:none}
+bdi{unicode-bidi:isolate}
+
+/* ---------- slide shell ---------- */
+.deck{padding:24px 0 8px}
+.slide{counter-increment:slide;position:relative;display:flex;flex-direction:column;width:min(1280px,calc(100% - 48px));min-height:min(800px,calc(100vh - 48px));margin:0 auto 24px;padding:40px 52px 64px;background:var(--surface);border:1px solid var(--line);border-radius:24px;box-shadow:var(--shadow);scroll-snap-align:start;scroll-margin-top:24px}
+.slide-head{margin-bottom:26px}
+.kicker{display:flex;flex-wrap:wrap;align-items:center;gap:10px;font-size:13px;line-height:1.6;color:var(--muted);font-weight:500}
+.theme-no{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600;font-size:12.5px}
+.slide-head h2{margin:10px 0 0;font-size:27px;line-height:1.5;font-weight:700}
+.slide-head .range{display:block;margin-top:2px;font-size:13px;color:var(--faint)}
+.slide-body{flex:1;display:grid;gap:20px;align-content:start}
+.slide-foot{position:absolute;inset-inline:52px;bottom:22px;display:flex;justify-content:space-between;gap:16px;font-size:12px;line-height:1.6;color:var(--faint)}
+.pg::before{content:counter(slide,persian) " از {{TOTAL}}"}
+
+.cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.cols-8-4{grid-template-columns:minmax(0,2fr) minmax(0,1fr)}
+.span-all{grid-column:1/-1}
+
+/* ---------- finding card ---------- */
+.finding{display:flex;flex-direction:column;gap:12px;min-width:0;padding:22px 24px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);scroll-margin-top:40px}
+.finding.split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:28px;align-items:start}
+.f-main{display:flex;flex-direction:column;gap:12px;min-width:0}
+.f-head{display:flex;gap:14px;align-items:flex-start}
+.f-num{flex:none;display:grid;place-items:center;width:36px;height:36px;margin-top:2px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:16px;line-height:1}
+.f-tag{display:inline-block;margin-bottom:3px;padding:0 9px;border:1px solid var(--line);border-radius:999px;font-size:12px;line-height:22px;color:var(--muted)}
+.f-head h3{margin:0;font-size:17.5px;line-height:1.7;font-weight:700}
+.f-text{margin:0;font-size:15px;line-height:2;color:var(--ink-2)}
+.note{display:flex;gap:10px;align-items:baseline;margin:0;padding-top:10px;border-top:1px dashed var(--line);font-size:14px;line-height:1.95;color:var(--ink-2)}
+.note b{flex:none;padding:0 8px;border-radius:6px;background:var(--subtle);border:1px solid var(--line);font-size:12px;font-weight:600;line-height:22px;color:var(--muted)}
+.note.suggest b{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.note.review b,.note.privacy b{background:var(--review-soft);border-color:transparent;color:var(--review)}
+
+/* ---------- screenshots ---------- */
+.shot{display:flex;flex-direction:column;align-items:center;gap:10px;min-width:0;margin:4px 0 0}
+.shot-frame{position:relative;display:inline-block;max-width:100%;line-height:0}
+.shot-frame img{display:block;width:auto;height:auto;max-width:100%;max-height:var(--mh,none);border:1px solid var(--line);border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,.08)}
+.mark{position:absolute;border:2px solid var(--mark);border-radius:8px;box-shadow:0 0 0 4px var(--mark-soft);pointer-events:none}
+.mark.missing{border-style:dashed;background:rgba(240,140,0,.1)}
+.mark i,.pin{display:inline-grid;place-items:center;width:22px;height:22px;border-radius:50%;background:var(--mark);color:#fff;font-style:normal;font-weight:700;font-size:12px;line-height:1}
+.mark i{position:absolute;top:-12px;left:-12px;box-shadow:0 0 0 2px #fff}
+figcaption{max-width:56ch;font-size:13px;line-height:1.8;color:var(--muted);text-align:center}
+.legend{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px;margin:0;padding:0;list-style:none;font-size:13px;color:var(--muted)}
+.legend li{display:flex;align-items:center;gap:8px}
+
+/* ---------- small visual components ---------- */
+.compare{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;gap:10px}
+.cmp-cell{display:flex;flex-direction:column;gap:2px;padding:10px 14px;background:var(--subtle);border:1px solid var(--line);border-radius:12px}
+.cmp-label{font-size:12px;color:var(--muted)}
+.cmp-value{font-size:15px;font-weight:600}
+.cmp-sep{align-self:center;font-size:20px;color:var(--faint)}
+.compare.two{grid-template-columns:repeat(2,minmax(0,1fr))}
+.mini-label{margin-bottom:-4px;font-size:12.5px;color:var(--muted)}
+.f-evidence{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start;margin-top:4px}
+
+.states{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.states li{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;padding:6px 12px;background:var(--subtle);border:1px solid var(--line);border-radius:12px;font-size:14px;line-height:1.8}
+.states li::before{display:grid;place-items:center;width:22px;height:22px;border-radius:50%;font-size:12px;font-weight:700;line-height:1}
+.states li.ok::before{content:"✓";background:var(--good-soft);color:var(--good)}
+.states li.no::before{content:"✕";background:var(--bad-soft);color:var(--bad)}
+.states li.info::before{content:"!";background:var(--review-soft);color:var(--review)}
+.st-key{color:var(--ink-2)}
+.st-val{font-weight:600;text-align:end}
+.states li.no .st-val{color:var(--bad)}
+.states li.ok .st-val{color:var(--good)}
+
+.diff{display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.diff li{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;padding:8px 12px;background:var(--subtle);border:1px solid var(--line);border-radius:12px;font-size:14px}
+.diff .ctx{min-width:7.5em;font-size:12.5px;color:var(--muted)}
+.diff .from{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--bad);text-decoration-thickness:1.5px}
+.diff .to{font-weight:600;color:var(--accent)}
+.diff .to::before{content:"←";margin-inline-end:12px;font-weight:400;color:var(--faint)}
+
+.flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.node{display:inline-flex;align-items:center;height:34px;padding:0 14px;border:1px solid var(--line);border-radius:10px;background:var(--subtle);font-size:14px;font-weight:600}
+.node.here{background:var(--accent-soft);border-color:transparent;color:var(--accent)}
+.arr{color:var(--faint)}
+
+.sets{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:10px;align-items:stretch}
+.set{display:flex;flex-direction:column;gap:10px;padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--subtle)}
+.set-title{font-size:13px;line-height:1.7;color:var(--muted)}
+.set-title strong{display:block;font-size:15px;color:var(--ink)}
+.pills{display:flex;flex-wrap:wrap;gap:6px}
+.pill{padding:2px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:13px}
+.pill.off{color:var(--faint);text-decoration:line-through;text-decoration-color:var(--bad);border-style:dashed}
+
+.sync{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:14px;align-items:center;padding:20px 24px;border:1px solid var(--line);border-radius:var(--radius);background:var(--subtle)}
+.sync-card{display:flex;flex-direction:column;gap:4px;padding:14px 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.sync-page{font-size:12.5px;color:var(--muted)}
+.sync-metric{font-size:16px;font-weight:700}
+.sync-meta{font-size:13px;color:var(--ink-2)}
+.sync-meta a{color:var(--accent);font-weight:600}
+.sync-link{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:13px;color:var(--muted);text-align:center}
+.sync-link span{font-size:26px;line-height:1;color:var(--bad)}
+
+.calc{display:grid;gap:8px}
+.calc-row{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px 14px;padding:10px 14px;background:var(--subtle);border:1px solid var(--line);border-radius:12px}
+.calc-k{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--ink-2)}
+.calc-v{font-size:16px;font-weight:600;letter-spacing:.2px}
+.calc-v em{font-style:normal;color:var(--review);background:var(--mark-soft);border-radius:4px;padding:0 2px}
+
+.strips{display:grid;gap:12px}
+.strip{display:grid;gap:6px}
+.strip-label{font-size:12.5px;color:var(--muted)}
+.strip .shot{align-items:stretch;margin:0}
+.strip .shot-frame,.strip .shot-frame img{width:100%}
+
+/* ---------- cover ---------- */
+.cover{justify-content:space-between;padding-top:72px;padding-bottom:72px}
+.overline{font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.2px}
+.cover h1{margin:14px 0 18px;font-size:44px;line-height:1.45;font-weight:800}
+.lede{margin:0;max-width:44ch;font-size:17px;line-height:2;color:var(--muted)}
+.cover-top{display:flex;justify-content:space-between;align-items:flex-end;gap:40px}
+.cover-stat{display:flex;flex-direction:column;align-items:flex-end;padding-bottom:6px;font-size:15px;color:var(--muted)}
+.cover-stat .big{font-size:76px;line-height:1.1;font-weight:800;color:var(--accent)}
+.cover-rule{width:56px;height:3px;margin:30px 0 0;border-radius:3px;background:var(--accent)}
+.meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin:0}
+.meta div{padding:16px 18px;border:1px solid var(--line);border-radius:14px;background:var(--subtle)}
+.meta dt{font-size:12.5px;color:var(--muted)}
+.meta dd{margin:2px 0 0;font-size:16px;font-weight:600}
+
+/* ---------- context ---------- */
+.panel{padding:22px 24px;border:1px solid var(--line);border-radius:var(--radius)}
+.panel h3{margin:0 0 12px;font-size:16px;font-weight:700}
+.facts{display:grid;gap:0;margin:0}
+.facts div{display:flex;justify-content:space-between;gap:16px;padding:10px 0;border-bottom:1px solid var(--line);font-size:15px}
+.facts div:last-child{border-bottom:0}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;font-weight:600;text-align:end}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{padding:4px 12px;border:1px solid var(--line);border-radius:999px;background:var(--subtle);font-size:13.5px}
+.keys{display:grid;gap:12px;margin:0;padding:0;list-style:none;font-size:14px;color:var(--ink-2)}
+.keys li{display:flex;align-items:center;gap:12px}
+.key-swatch{flex:none;display:grid;place-items:center;width:40px;height:26px}
+.key-swatch .box{width:34px;height:20px;border:2px solid var(--mark);border-radius:6px;box-shadow:0 0 0 3px var(--mark-soft)}
+.key-swatch .box.missing{border-style:dashed}
+.key-swatch .blur{width:34px;height:20px;border-radius:6px;background:linear-gradient(90deg,#C9CDD4,#E3E6EA,#C9CDD4);filter:blur(1.5px)}
+.key-swatch .f-num{width:26px;height:26px;font-size:13px;margin:0}
+.key-swatch .f-tag{margin:0;font-size:11px;padding:0 7px}
+.key-note{margin:14px 0 0;font-size:13px;color:var(--muted)}
+
+/* ---------- index ---------- */
+.idx{display:flex;flex-direction:column;gap:6px;padding:18px 20px;border:1px solid var(--line);border-radius:var(--radius)}
+.idx header{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.idx h3{margin:0;flex:1;font-size:15px;line-height:1.7;font-weight:700}
+.idx .count{font-size:12.5px;color:var(--muted);white-space:nowrap}
+.idx ol{display:grid;gap:2px;margin:0;padding:0;list-style:none}
+.idx a{display:flex;gap:10px;padding:3px 6px;margin-inline:-6px;border-radius:8px;font-size:14px;line-height:1.8;color:var(--ink-2)}
+.idx a:hover{background:var(--subtle);color:var(--ink)}
+.idx .n{flex:none;min-width:1.6em;font-weight:700;color:var(--accent)}
+
+/* ---------- summary ---------- */
+.patterns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:0;padding:0;list-style:none}
+.patterns li{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:14px 18px;border:1px solid var(--line);border-radius:14px}
+.patterns p{margin:0;font-size:15px;line-height:1.85;color:var(--ink-2)}
+.refs{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;flex:none;max-width:45%}
+.refs a{display:grid;place-items:center;min-width:28px;height:28px;padding:0 6px;border-radius:8px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:700}
+.refs a:hover{background:var(--accent);color:#fff}
+.review-box{display:grid;gap:10px;padding:20px 24px;border-radius:var(--radius);background:var(--review-soft)}
+.review-box h3{margin:0;font-size:15.5px;color:var(--review)}
+.review-box ul{display:grid;gap:6px;margin:0;padding:0;list-style:none}
+.review-box li{display:flex;gap:10px;font-size:14.5px;line-height:1.9;color:var(--ink-2)}
+.review-box li a{flex:none;font-weight:700;color:var(--review)}
+.totals{display:flex;flex-wrap:wrap;gap:8px 22px;font-size:14px;color:var(--muted)}
+.totals strong{color:var(--ink)}
+
+/* ---------- responsive ---------- */
+@media (max-width:1100px){
+  .slide{padding:34px 32px 60px}
+  .slide-foot{inset-inline:32px}
+  .finding.split{grid-template-columns:1fr}
+  .cols-3{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .meta{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media (max-width:860px){
+  html{scroll-snap-type:none}
+  .deck{padding:16px 0 4px}
+  .slide{width:calc(100% - 32px);min-height:0;margin-bottom:16px;padding:26px 18px 58px;border-radius:18px;scroll-margin-top:16px}
+  .slide-foot{inset-inline:18px;bottom:18px}
+  .slide-head h2{font-size:22px}
+  .cols-2,.cols-3,.cols-8-4,.patterns{grid-template-columns:1fr}
+  .finding{padding:18px 16px}
+  .cover{padding-top:44px;padding-bottom:58px;gap:36px}
+  .cover h1{font-size:31px}
+  .lede{font-size:15.5px}
+  .meta{grid-template-columns:1fr}
+  .cover-top{flex-direction:column;align-items:flex-start;gap:20px}
+  .cover-stat{align-items:flex-start}
+  .cover-stat .big{font-size:52px}
+  .sync,.sets,.compare,.f-evidence{grid-template-columns:1fr}
+  .sync-link,.cmp-sep{justify-self:center}
+  .sets>.cmp-sep{display:block;text-align:center}
+  .patterns li{flex-direction:column;align-items:flex-start}
+  .refs{max-width:none;justify-content:flex-start}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+@media print{
+  @page{size:1280px 820px;margin:0}
+  body{background:#fff}
+  .deck{padding:0}
+  .slide{width:100%;min-height:820px;margin:0;border:0;border-radius:0;box-shadow:none;break-after:page;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<main class="deck">
+
+<!-- ============ 1. Cover ============ -->
+<section class="slide cover" aria-label="جلد">
+  <div class="cover-top">
+    <div>
+      <span class="overline">UX Review · گزارش بررسی اولیه</span>
+      <h1>بررسی اولیه تجربه کاربری<br>اپلیکیشن ایساتیس</h1>
+      <p class="lede">یافته‌های بررسی اولیه تجربه کاربری، دسته‌بندی‌شده و همراه با شواهد تصویری از نسخه Staging</p>
+      <div class="cover-rule"></div>
+    </div>
+    <div class="cover-stat"><span class="big">۲۳</span><span>یافته در ۶ دسته</span></div>
+  </div>
+  <dl class="meta">
+    <div><dt>پژوهشگر تجربه کاربری (UX Researcher)</dt><dd>رضوان</dd></div>
+    <div><dt>با همکاری</dt><dd>سبحان</dd></div>
+    <div><dt>نسخه بررسی‌شده</dt><dd>آخرین نسخه Staging</dd></div>
+    <div><dt>تاریخ بررسی</dt><dd>۱۳ مهر ۱۴۰۵</dd></div>
+  </dl>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ 2. Context ============ -->
+<section class="slide" aria-labelledby="ctx-title">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">مقدمه</span></div>
+    <h2 id="ctx-title">زمینه و دامنه بررسی</h2>
+  </header>
+  <div class="slide-body cols-2">
+    <div class="panel">
+      <h3>مشخصات بررسی</h3>
+      <dl class="facts">
+        <div><dt>نوع بررسی</dt><dd>بررسی اولیه تجربه کاربری</dd></div>
+        <div><dt>محصول</dt><dd>اپلیکیشن ایساتیس</dd></div>
+        <div><dt>نسخه بررسی‌شده</dt><dd>آخرین نسخه Staging</dd></div>
+        <div><dt>تاریخ بررسی</dt><dd>۱۳ مهر ۱۴۰۵</dd></div>
+        <div><dt>UX Researcher</dt><dd>رضوان</dd></div>
+        <div><dt>با همکاری</dt><dd>سبحان</dd></div>
+        <div><dt>تعداد یافته‌ها</dt><dd>۲۳ یافته در ۶ دسته</dd></div>
+      </dl>
+      <h3 style="margin-top:22px">بخش‌هایی که در یافته‌ها به آن‌ها اشاره شده</h3>
+      <div class="chips">
+        <span class="chip">صفحه بازارها</span><span class="chip">PDP</span><span class="chip">معامله آسان</span><span class="chip">کیف پول و دارایی‌ها</span><span class="chip">ثبت‌نام</span><span class="chip">کارت‌های بانکی</span><span class="chip">شارژ حساب</span><span class="chip">رسید معامله</span><span class="chip">پروفایل</span>
+      </div>
+    </div>
+    <div class="panel">
+      <h3>راهنمای خواندن گزارش</h3>
+      <ul class="keys">
+        <li><span class="key-swatch"><span class="f-num">۷</span></span>شماره یافته</li>
+        <li><span class="key-swatch"><span class="f-tag">PDP</span></span>بخشی از اپلیکیشن که یافته به آن مربوط است</li>
+        <li><span class="key-swatch"><span class="box"></span></span>بخش مرتبط با یافته در تصویر</li>
+        <li><span class="key-swatch"><span class="box missing"></span></span>جای عنصری که یافته به نبود آن اشاره می‌کند</li>
+        <li><span class="key-swatch"><span class="pin">۱</span></span>ارجاع بین تصویر و توضیح کنار آن</li>
+        <li><span class="key-swatch"><span class="blur"></span></span>اطلاعات شخصی در تصاویر محو شده است</li>
+      </ul>
+      <p class="key-note">برچسب‌های «پیامد»، «پیشنهاد» و «نیاز به بررسی» فقط بخش‌های متن هر یافته را از هم جدا می‌کنند و نشان‌دهنده اولویت یا شدت نیستند.</p>
+    </div>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ 3. Index ============ -->
+<section class="slide" aria-labelledby="idx-title">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">فهرست</span></div>
+    <h2 id="idx-title">یافته‌ها در یک نگاه</h2>
+  </header>
+  <div class="slide-body cols-3">
+    <section class="idx">
+      <header><span class="theme-no">۱</span><h3>مشکلات داده، نمایش اطلاعات و نمودار</h3><span class="count">۴ یافته</span></header>
+      <ol>
+        <li><a href="#f1"><span class="n">۱</span>به‌روزرسانی خودکار سود و ضرر ۲۴ ساعته</a></li>
+        <li><a href="#f2"><span class="n">۲</span>هماهنگی سود و ضرر بازارها و PDP</a></li>
+        <li><a href="#f3"><span class="n">۳</span>چند نقطه برای یک روز در نمودار یک‌هفته‌ای</a></li>
+        <li><a href="#f4"><span class="n">۴</span>بازه زمانی نمودار یک‌ماهه</a></li>
+      </ol>
+    </section>
+    <section class="idx">
+      <header><span class="theme-no">۲</span><h3>ناهماهنگی در نام‌گذاری و UX Writing</h3><span class="count">۸ یافته</span></header>
+      <ol>
+        <li><a href="#f5"><span class="n">۵</span>نام‌گذاری چیپ‌های صفحه بازارها</a></li>
+        <li><a href="#f6"><span class="n">۶</span>نام‌گذاری قیمت دارایی</a></li>
+        <li><a href="#f7"><span class="n">۷</span>مفهوم «دارایی‌ها» در کیف پول</a></li>
+        <li><a href="#f8"><span class="n">۸</span>اطلاعات انتخاب ارز در معامله آسان</a></li>
+        <li><a href="#f9"><span class="n">۹</span>موارد نگارشی نیم‌فاصله</a></li>
+        <li><a href="#f10"><span class="n">۱۰</span>فاصله اضافی در متن شارژ حساب</a></li>
+        <li><a href="#f11"><span class="n">۱۱</span>واژه «رکورد» در پیام خطا</a></li>
+        <li><a href="#f12"><span class="n">۱۲</span>کد کشور در شماره موبایل پروفایل</a></li>
+      </ol>
+    </section>
+    <section class="idx">
+      <header><span class="theme-no">۳</span><h3>محدودیت‌ها و منطق فلوی معامله</h3><span class="count">۵ یافته</span></header>
+      <ol>
+        <li><a href="#f13"><span class="n">۱۳</span>انتخاب رمزارزهای بدون موجودی</a></li>
+        <li><a href="#f14"><span class="n">۱۴</span>حداقل مبلغ خرید متفاوت بین رمزارزها</a></li>
+        <li><a href="#f15"><span class="n">۱۵</span>مغایرت مقدار رمزارز در فاکتور</a></li>
+        <li><a href="#f16"><span class="n">۱۶</span>بازگشت از معامله آسان به PDP</a></li>
+        <li><a href="#f17"><span class="n">۱۷</span>کپی کردن کد پیگیری معامله</a></li>
+      </ol>
+    </section>
+    <section class="idx">
+      <header><span class="theme-no">۴</span><h3>خطاها و بازخوردهای سیستم</h3><span class="count">۲ یافته</span></header>
+      <ol>
+        <li><a href="#f18"><span class="n">۱۸</span>پیام خطای کارت بانکی تکراری</a></li>
+        <li><a href="#f19"><span class="n">۱۹</span>پیام خطای کد ملی تکراری و ریسک افشای اطلاعات</a></li>
+      </ol>
+    </section>
+    <section class="idx">
+      <header><span class="theme-no">۵</span><h3>ناوبری و تعامل</h3><span class="count">۳ یافته</span></header>
+      <ol>
+        <li><a href="#f20"><span class="n">۲۰</span>خروج ناخواسته از فلوی ثبت‌نام</a></li>
+        <li><a href="#f21"><span class="n">۲۱</span>جابه‌جایی آیکن نمایش/مخفی‌کردن موجودی</a></li>
+        <li><a href="#f22"><span class="n">۲۲</span>ضربدر غیرقابل‌استفاده در Toast Message</a></li>
+      </ol>
+    </section>
+    <section class="idx">
+      <header><span class="theme-no">۶</span><h3>شفافیت اطلاعات مالی</h3><span class="count">۱ یافته</span></header>
+      <ol>
+        <li><a href="#f23"><span class="n">۲۳</span>شماره کارت مبدا در رسید شارژ حساب</a></li>
+      </ol>
+    </section>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 1a: findings 1–2 ============ -->
+<section class="slide" aria-labelledby="t1a">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۱</span>مشکلات داده، نمایش اطلاعات و نمودار</div>
+    <h2 id="t1a">سود و ضرر ۲۴ ساعته</h2>
+    <span class="range">یافته‌های ۱ و ۲</span>
+  </header>
+  <div class="slide-body cols-2">
+    <article class="finding" id="f1">
+      <div class="f-head"><span class="f-num">۱</span><div><span class="f-tag">صفحه بازارها</span><h3>عدم به‌روزرسانی خودکار سود و ضرر ۲۴ ساعته در صفحه بازارها</h3></div></div>
+      <p class="f-text">اعداد مربوط به سود و ضرر ۲۴ ساعته در صفحه بازارها با رفرش کردن صفحه به‌روزرسانی می‌شوند و به‌صورت خودکار تغییر نمی‌کنند.</p>
+      <p class="note"><b>پیامد</b><span>این موضوع می‌تواند باعث نمایش اطلاعات قدیمی به کاربر شود.</span></p>
+    </article>
+    <article class="finding" id="f2">
+      <div class="f-head"><span class="f-num">۲</span><div><span class="f-tag">صفحه بازارها · PDP</span><h3>عدم هماهنگی سود و ضرر ۲۴ ساعته بین صفحه بازارها و PDP</h3></div></div>
+      <p class="f-text">اعداد مربوط به سود و ضرر ۲۴ ساعته یک دارایی در صفحه بازارها و صفحه PDP با یکدیگر همگام نیستند.</p>
+      <p class="note"><b>پیامد</b><span>در نتیجه، با جابه‌جایی بین این دو صفحه ممکن است کاربر برای یک دارایی، دو مقدار متفاوت مشاهده کند.</span></p>
+    </article>
+    <div class="sync span-all" role="img" aria-label="نمودار ارتباط سود و ضرر ۲۴ ساعته بین صفحه بازارها و PDP">
+      <div class="sync-card">
+        <span class="sync-page">صفحه بازارها</span>
+        <span class="sync-metric">سود و ضرر ۲۴ ساعته</span>
+        <span class="sync-meta"><a href="#f1">یافته ۱</a> · به‌روزرسانی فقط با رفرش صفحه</span>
+      </div>
+      <div class="sync-link"><span>≠</span><small><a href="#f2">یافته ۲</a> · همگام نیستند</small></div>
+      <div class="sync-card">
+        <span class="sync-page">صفحه PDP</span>
+        <span class="sync-metric">سود و ضرر ۲۴ ساعته</span>
+        <span class="sync-meta">همان دارایی</span>
+      </div>
+    </div>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 1b: findings 3–4 ============ -->
+<section class="slide" aria-labelledby="t1b">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۱</span>مشکلات داده، نمایش اطلاعات و نمودار</div>
+    <h2 id="t1b">نمودارهای PDP</h2>
+    <span class="range">یافته‌های ۳ و ۴</span>
+  </header>
+  <div class="slide-body cols-8-4">
+    <article class="finding split" id="f3">
+      <div class="f-main">
+        <div class="f-head"><span class="f-num">۳</span><div><span class="f-tag">PDP · نمودار یک‌هفته‌ای</span><h3>وجود چند نقطه برای یک روز در نمودار یک‌هفته‌ای</h3></div></div>
+        <p class="f-text">در نمودار یک‌هفته‌ای PDP، برای هر روز سه نقطه روی نمودار وجود دارد. در نتیجه، با انتخاب نقاط مختلف روی نمودار، تاریخ یکسان اما قیمت‌های متفاوت نمایش داده می‌شود؛ در حالی که ساعت هر نقطه نیز مشخص نیست.</p>
+        <p class="note"><b>پیامد</b><span>نمایش این نقاط به شکل فعلی می‌تواند درک روند قیمت را برای کاربر دشوار کند.</span></p>
+      </div>
+      {{FIG:f03}}
+    </article>
+    <article class="finding" id="f4">
+      <div class="f-head"><span class="f-num">۴</span><div><span class="f-tag">PDP · نمودار یک‌ماهه</span><h3>بازه زمانی نامشخص در نمودار یک‌ماهه</h3></div></div>
+      <p class="f-text">در نمودار یک‌ماهه، بازه نمایش‌داده‌شده الزاماً یک ماه کامل را پوشش نمی‌دهد. برای مثال، ممکن است یک سمت نمودار ۱۶ شهریور و سمت دیگر ۱۴ شهریور نمایش داده شود.</p>
+      <p class="note review"><b>نیاز به بررسی</b><span>علت این اختلاف مشخص نیست و نیاز به بررسی دارد.</span></p>
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 2a: findings 5–6 ============ -->
+<section class="slide" aria-labelledby="t2a">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۲</span>ناهماهنگی در نام‌گذاری و UX Writing</div>
+    <h2 id="t2a">برچسب‌ها و عنوان‌ها</h2>
+    <span class="range">یافته‌های ۵ و ۶</span>
+  </header>
+  <div class="slide-body cols-2">
+    <article class="finding" id="f5">
+      <div class="f-head"><span class="f-num">۵</span><div><span class="f-tag">صفحه بازارها</span><h3>ناهماهنگی در نام‌گذاری چیپ‌های صفحه بازارها</h3></div></div>
+      <p class="f-text">در چیپ‌های صفحه بازارها، «رمز ارز» باید به‌صورت صحیح «رمزارز» نوشته شود.</p>
+      {{FIG:f05}}
+      <ul class="diff" aria-label="تغییرات نگارشی">
+        <li><span class="ctx">نگارش صحیح</span><span class="from">رمز ارز</span><span class="to">رمزارز</span></li>
+        <li><span class="ctx">هم‌خوانی با سایر گزینه‌ها</span><span class="from">رمزارز</span><span class="to">رمزارزها</span></li>
+      </ul>
+      <p class="note suggest"><b>پیشنهاد</b><span>همچنین با توجه به اینکه سایر گزینه‌ها به‌صورت جمع نوشته شده‌اند («فلزات»، «کالاها»، «صندوق‌ها»)، بهتر است این گزینه نیز به شکل «رمزارزها» نمایش داده شود.</span></p>
+    </article>
+    <article class="finding" id="f6">
+      <div class="f-head"><span class="f-num">۶</span><div><span class="f-tag">دارایی‌ها · PDP</span><h3>ناهماهنگی در نام‌گذاری قیمت دارایی</h3></div></div>
+      <p class="f-text">قیمت یک دارایی در صفحه دارایی‌ها با عنوان «آخرین قیمت» و در صفحه PDP با عنوان «قیمت لحظه‌ای» نمایش داده می‌شود؛ در حالی که این دو عنوان به یک مفهوم و یک مقدار اشاره دارند.</p>
+      <div class="compare" role="img" aria-label="مقایسه دو عنوان برای یک مقدار">
+        <div class="cmp-cell"><span class="cmp-label">صفحه دارایی‌ها</span><span class="cmp-value">«آخرین قیمت»</span></div>
+        <span class="cmp-sep">≠</span>
+        <div class="cmp-cell"><span class="cmp-label">صفحه PDP</span><span class="cmp-value">«قیمت لحظه‌ای»</span></div>
+      </div>
+      {{FIG:f06}}
+      <p class="note suggest"><b>پیشنهاد</b><span>استفاده از یک عنوان یکسان می‌تواند از ایجاد ابهام جلوگیری کند.</span></p>
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 2b: findings 7–8 ============ -->
+<section class="slide" aria-labelledby="t2b">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۲</span>ناهماهنگی در نام‌گذاری و UX Writing</div>
+    <h2 id="t2b">مفاهیم و منطق نمایش اطلاعات</h2>
+    <span class="range">یافته‌های ۷ و ۸</span>
+  </header>
+  <div class="slide-body cols-2">
+    <article class="finding" id="f7">
+      <div class="f-head"><span class="f-num">۷</span><div><span class="f-tag">کیف پول</span><h3>ناهماهنگی در مفهوم «دارایی‌ها» در صفحه کیف پول</h3></div></div>
+      <p class="f-text">در بخش پایینی صفحه کیف پول، عنوان اصلی «دارایی‌ها» شامل موجودی تومانی و رمزارزهای خریداری‌شده است. اما با کلیک روی «ارزش کل دارایی»، در Bottom Sheet نیز سکشنی با عنوان «دارایی‌ها» نمایش داده می‌شود که موجودی تومانی را شامل نمی‌شود.</p>
+      <div class="sets" role="img" aria-label="مقایسه محتوای دو بخش با عنوان دارایی‌ها">
+        <div class="set">
+          <div class="set-title">صفحه کیف پول<strong>«دارایی‌ها»</strong></div>
+          <div class="pills"><span class="pill">موجودی تومانی</span><span class="pill">رمزارزهای خریداری‌شده</span></div>
+        </div>
+        <span class="cmp-sep">≠</span>
+        <div class="set">
+          <div class="set-title">Bottom Sheet «ارزش کل دارایی»<strong>«دارایی‌ها»</strong></div>
+          <div class="pills"><span class="pill off">موجودی تومانی</span><span class="pill">رمزارزهای خریداری‌شده</span></div>
+        </div>
+      </div>
+      <p class="note"><b>پیامد</b><span>این تفاوت می‌تواند برای کاربر ابهام ایجاد کند.</span></p>
+    </article>
+    <article class="finding" id="f8">
+      <div class="f-head"><span class="f-num">۸</span><div><span class="f-tag">معامله آسان · انتخاب ارز</span><h3>نمایش متفاوت اطلاعات در انتخاب ارز معامله آسان</h3></div></div>
+      <p class="f-text">در بخش انتخاب ارز در معامله آسان، برای تومان، موجودی تومانی کاربر نمایش داده می‌شود، اما برای سایر رمزارزها قیمت لحظه‌ای نمایش داده می‌شود. بنابراین اطلاعاتی که در کنار گزینه‌های مختلف نمایش داده می‌شود از یک منطق یکسان پیروی نمی‌کند.</p>
+      {{FIG:f08}}
+      <ul class="legend">
+        <li><span class="pin">۱</span>تومان: موجودی تومانی کاربر</li>
+        <li><span class="pin">۲</span>سایر رمزارزها: قیمت لحظه‌ای</li>
+      </ul>
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 2c: findings 9–10 ============ -->
+<section class="slide" aria-labelledby="t2c">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۲</span>ناهماهنگی در نام‌گذاری و UX Writing</div>
+    <h2 id="t2c">نیم‌فاصله و فاصله‌گذاری</h2>
+    <span class="range">یافته‌های ۹ و ۱۰</span>
+  </header>
+  <div class="slide-body cols-2">
+    <article class="finding" id="f9">
+      <div class="f-head"><span class="f-num">۹</span><div><span class="f-tag">کارت‌های بانکی · فاکتور معامله</span><h3>موارد نگارشی مربوط به نیم‌فاصله</h3></div></div>
+      <p class="f-text">در بخش کارت‌های بانکی، عبارت «تایید شده» و در فاکتور معامله، عبارت «پرداخت شده» بدون نیم‌فاصله نوشته شده‌اند.</p>
+      <ul class="diff" aria-label="تغییرات نگارشی">
+        <li><span class="ctx">کارت‌های بانکی</span><span class="from">تایید شده</span><span class="to">تاییدشده</span></li>
+        <li><span class="ctx">فاکتور معامله</span><span class="from">پرداخت شده</span><span class="to">پرداخت‌شده</span></li>
+      </ul>
+      <p class="note suggest"><b>پیشنهاد</b><span>بهتر است این عبارات به‌ترتیب به شکل «تاییدشده» و «پرداخت‌شده» نوشته شوند.</span></p>
+    </article>
+    <article class="finding" id="f10">
+      <div class="f-head"><span class="f-num">۱۰</span><div><span class="f-tag">شارژ حساب</span><h3>فاصله اضافی در متن فلوی شارژ حساب</h3></div></div>
+      <p class="f-text">در فلوی شارژ حساب، در متن راهنمای مربوط به پس از پرداخت و گزینه «پرداخت کردم»، یک فاصله اضافی در گیومه وجود دارد که باید اصلاح شود.</p>
+      {{FIG:f10}}
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 2d: findings 11–12 ============ -->
+<section class="slide" aria-labelledby="t2d">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۲</span>ناهماهنگی در نام‌گذاری و UX Writing</div>
+    <h2 id="t2d">واژه‌گزینی و نمایش اطلاعات کاربر</h2>
+    <span class="range">یافته‌های ۱۱ و ۱۲</span>
+  </header>
+  <div class="slide-body cols-2">
+    <article class="finding" id="f11">
+      <div class="f-head"><span class="f-num">۱۱</span><div><span class="f-tag">ثبت‌نام</span><h3>استفاده از واژه «رکورد» در پیام خطای ثبت‌نام</h3></div></div>
+      <p class="f-text">در فرایند ثبت‌نام، در صورت عدم تطابق کد ملی و تاریخ تولد با اطلاعات ثبت‌احوال، پیام «با این کد ملی و تاریخ تولد رکوردی در ثبت‌احوال پیدا نشد» نمایش داده می‌شود. واژه «رکورد» برای بخشی از کاربران ممکن است نامأنوس باشد و بهتر است از عبارتی ساده‌تر و کاربرمحور استفاده شود.</p>
+      {{FIG:f11}}
+    </article>
+    <article class="finding" id="f12">
+      <div class="f-head"><span class="f-num">۱۲</span><div><span class="f-tag">پروفایل</span><h3>نمایش کد کشور در شماره موبایل پروفایل</h3></div></div>
+      <p class="f-text">در بخش پروفایل، شماره موبایل کاربر همراه با پیش‌شماره «<bdi dir="ltr">+98</bdi>» نمایش داده می‌شود.</p>
+      {{FIG:f12}}
+      <p class="note review"><b>نیاز به بررسی</b><span>اگر قرار است ثبت‌نام کاربران صرفاً با شماره‌های ایران انجام شود، می‌توان بررسی کرد که آیا نمایش کد کشور در این بخش ضرورتی دارد یا خیر.</span></p>
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 3a: findings 13–14 ============ -->
+<section class="slide" aria-labelledby="t3a">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۳</span>محدودیت‌ها و منطق فلوی معامله</div>
+    <h2 id="t3a">انتخاب ارز و حداقل مبلغ خرید</h2>
+    <span class="range">یافته‌های ۱۳ و ۱۴</span>
+  </header>
+  <div class="slide-body cols-2">
+    <article class="finding" id="f13">
+      <div class="f-head"><span class="f-num">۱۳</span><div><span class="f-tag">معامله آسان</span><h3>امکان انتخاب رمزارزهای بدون موجودی در معامله آسان</h3></div></div>
+      <p class="f-text">در فلوی معامله آسان، هنگام انتخاب ارز پرداخت‌کننده، کاربر می‌تواند رمزارزهایی را انتخاب کند که هیچ موجودی از آن‌ها ندارد. پس از انتخاب نیز هنگام وارد کردن مقدار، تازه با پیام خطا مواجه می‌شود.</p>
+      {{FIG:f13}}
+      <p class="note suggest"><b>پیشنهاد</b><span>بهتر است گزینه‌هایی که امکان استفاده از آن‌ها وجود ندارد، از ابتدا قابل انتخاب نباشند یا وضعیت آن‌ها به‌وضوح مشخص شود.</span></p>
+    </article>
+    <article class="finding" id="f14">
+      <div class="f-head"><span class="f-num">۱۴</span><div><span class="f-tag">معامله آسان</span><h3>تفاوت در حداقل مبلغ خرید بین رمزارزها</h3></div></div>
+      <p class="f-text">در معامله آسان، وقتی فیلد اول بر اساس تومان است، حداقل مبلغ خرید برای رمزارزهای مختلف متفاوت است.</p>
+      <span class="mini-label">برای مثال</span>
+      <ul class="states" aria-label="مثال">
+        <li class="ok"><span class="st-key">خرید سولانا با ۵۰ هزار تومان</span><span class="st-val">امکان‌پذیر است</span></li>
+        <li class="no"><span class="st-key">خرید اتریوم با همین مبلغ</span><span class="st-val">قابل استفاده نیست</span></li>
+      </ul>
+      {{FIG:f14}}
+      <p class="note"><b>پیامد</b><span>این تفاوت بدون توضیح مشخص می‌تواند برای کاربر سردرگم‌کننده باشد و منطق تعیین حداقل خرید را نامشخص کند.</span></p>
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 3b: finding 15 ============ -->
+<section class="slide" aria-labelledby="t3b">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۳</span>محدودیت‌ها و منطق فلوی معامله</div>
+    <h2 id="t3b">پیش‌فاکتور معامله</h2>
+    <span class="range">یافته ۱۵</span>
+  </header>
+  <div class="slide-body">
+    <article class="finding split" id="f15">
+      <div class="f-main">
+        <div class="f-head"><span class="f-num">۱۵</span><div><span class="f-tag">معامله آسان · پیش‌فاکتور</span><h3>مغایرت مقدار رمزارز در فاکتور معامله با محاسبه اولیه</h3></div></div>
+        <p class="f-text">در فلو معامله، مقدار رمزارز قابل خرید که از تقسیم مبلغ تومانی واردشده بر قیمت لحظه‌ای رمزارز به دست می‌آید، با مقداری که در پیش‌فاکتور نمایش داده می‌شود مغایرت دارد.</p>
+        <div class="calc" aria-label="مقادیر نمایش‌داده‌شده در تصویر">
+          <div class="calc-row"><span class="calc-k"><span class="pin">۱</span>مبلغ ÷ قیمت واحد</span><bdi dir="ltr" class="calc-v">۱,۰۰۰,۰۰۰ ÷ ۳۲,۵۴۵,۰۲۸ = ۰٫۰۳۰۷<em>۲۶۶۶</em></bdi></div>
+          <div class="calc-row"><span class="calc-k"><span class="pin">۲</span>مقدار در پیش‌فاکتور</span><bdi dir="ltr" class="calc-v">۰٫۰۳۰۷<em>۱۸۴۹</em> SOL</bdi></div>
+        </div>
+        <p class="note"><b>پیامد</b><span>این اختلاف می‌تواند اعتماد کاربر به مبلغ و مقدار نهایی معامله را تحت تأثیر قرار دهد.</span></p>
+      </div>
+      {{FIG:f15}}
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 3c: findings 16–17 ============ -->
+<section class="slide" aria-labelledby="t3c">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۳</span>محدودیت‌ها و منطق فلوی معامله</div>
+    <h2 id="t3c">مسیر بازگشت و رسید معامله</h2>
+    <span class="range">یافته‌های ۱۶ و ۱۷</span>
+  </header>
+  <div class="slide-body cols-8-4">
+    <article class="finding" id="f16">
+        <div class="f-head"><span class="f-num">۱۶</span><div><span class="f-tag">PDP · معامله آسان</span><h3>نبود امکان بازگشت مستقیم از معامله آسان به PDP</h3></div></div>
+        <p class="f-text">وقتی کاربر از صفحه PDP گزینه خرید یا فروش را انتخاب می‌کند و وارد صفحه معامله آسان می‌شود، در صورت تمایل به بازگشت به PDP دکمه Back در اختیار ندارد. تنها امکان موجود، استفاده از تب‌های Navigation Bar است که کاربر را یک مرحله عقب‌تر از مقصد موردنظر، یعنی به صفحه بازارها، منتقل می‌کند.</p>
+      <div class="f-evidence">
+       <div class="f-main">
+        <div class="flow" role="img" aria-label="مسیر بازارها، PDP و معامله آسان">
+          <span class="node">بازارها</span><span class="arr">←</span><span class="node">PDP</span><span class="arr">←</span><span class="node here">معامله آسان</span>
+        </div>
+        <ul class="states" aria-label="مسیرهای بازگشت">
+          <li class="no"><span class="st-key">معامله آسان ← PDP</span><span class="st-val">دکمه Back وجود ندارد</span></li>
+          <li class="info"><span class="st-key">معامله آسان ← بازارها</span><span class="st-val">از طریق Navigation Bar</span></li>
+        </ul>
+       </div>
+      <div class="strips">
+        <div class="strip"><span class="strip-label">هدر PDP</span>{{FIG:f16a}}</div>
+        <div class="strip"><span class="strip-label">هدر معامله آسان</span>{{FIG:f16b}}</div>
+        <div class="strip"><span class="strip-label">Navigation Bar در معامله آسان</span>{{FIG:f16c}}</div>
+      </div>
+      </div>
+    </article>
+    <article class="finding" id="f17">
+      <div class="f-head"><span class="f-num">۱۷</span><div><span class="f-tag">رسید معامله</span><h3>عدم امکان کپی کردن کد پیگیری معامله</h3></div></div>
+      <p class="f-text">در رسید معامله، کد پیگیری به‌صورت متنی نمایش داده می‌شود اما امکان کپی کردن آن برای کاربر وجود ندارد. در نتیجه، اگر کاربر بخواهد کد پیگیری را برای پیگیری، جست‌وجو یا ارسال به شخص دیگری استفاده کند، مجبور است آن را به‌صورت دستی وارد کند.</p>
+      <p class="note suggest"><b>پیشنهاد</b><span>امکان کپی کردن کد می‌تواند این فرایند را ساده‌تر و کم‌خطاتر کند.</span></p>
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 4: findings 18–19 ============ -->
+<section class="slide" aria-labelledby="t4">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۴</span>خطاها و بازخوردهای سیستم</div>
+    <h2 id="t4">پیام خطا برای اطلاعات تکراری</h2>
+    <span class="range">یافته‌های ۱۸ و ۱۹</span>
+  </header>
+  <div class="slide-body cols-2">
+    <article class="finding" id="f18">
+      <div class="f-head"><span class="f-num">۱۸</span><div><span class="f-tag">کارت‌های بانکی</span><h3>پیام خطای نامتناسب هنگام ثبت کارت بانکی تکراری</h3></div></div>
+      <p class="f-text">اگر کاربر شماره کارتی را وارد کند که پیش‌تر در سیستم ثبت شده است، پیام «شماره کارت واردشده معتبر نیست» نمایش داده می‌شود. این پیام با وضعیت واقعی همخوانی ندارد؛ شماره کارت معتبر است و مسئله، ثبت‌شدن قبلی آن است.</p>
+      <ul class="states">
+        <li class="no"><span class="st-key">پیام نمایش‌داده‌شده</span><span class="st-val">شماره کارت واردشده معتبر نیست</span></li>
+        <li class="info"><span class="st-key">وضعیت واقعی</span><span class="st-val">کارت معتبر است و پیش‌تر ثبت شده</span></li>
+      </ul>
+      {{FIG:f18}}
+      <p class="note suggest"><b>پیشنهاد</b><span>پیام خطا باید علت واقعی وضعیت را به کاربر منتقل کند.</span></p>
+    </article>
+    <article class="finding" id="f19">
+      <div class="f-head"><span class="f-num">۱۹</span><div><span class="f-tag">ثبت‌نام</span><h3>پیام خطای نامتناسب در ثبت‌نام با کد ملی تکراری و ریسک افشای اطلاعات</h3></div></div>
+      <p class="f-text">اگر کاربر در فرایند ثبت‌نام کد ملی‌ای را وارد کند که قبلاً با آن ثبت‌نام شده است، همان پیام «کد ملی واردشده معتبر نیست» نمایش داده می‌شود؛ در حالی که کد ملی معتبر است و مسئله، استفاده قبلی از آن است.</p>
+      <ul class="states">
+        <li class="no"><span class="st-key">پیام نمایش‌داده‌شده</span><span class="st-val">کد ملی واردشده معتبر نیست</span></li>
+        <li class="info"><span class="st-key">وضعیت واقعی</span><span class="st-val">کد ملی معتبر است و قبلاً استفاده شده</span></li>
+      </ul>
+      <p class="note privacy"><b>حریم خصوصی</b><span>علاوه بر نادرست بودن پیام، نحوه نمایش این خطا از نظر حریم خصوصی نیز نیازمند بررسی است؛ زیرا اعلام مستقیم اینکه یک کد ملی قبلاً در سیستم استفاده شده، می‌تواند به افشای وجود حساب کاربری یک فرد منجر شود.</span></p>
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 5: findings 20–22 ============ -->
+<section class="slide" aria-labelledby="t5">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۵</span>ناوبری و تعامل</div>
+    <h2 id="t5">ناوبری و تعامل</h2>
+    <span class="range">یافته‌های ۲۰ تا ۲۲</span>
+  </header>
+  <div class="slide-body cols-3">
+    <article class="finding" id="f20">
+      <div class="f-head"><span class="f-num">۲۰</span><div><span class="f-tag">ثبت‌نام</span><h3>خروج ناخواسته از فلوی ثبت‌نام هنگام بازگشت به مرحله قبل</h3></div></div>
+      <p class="f-text">پس از وارد کردن شماره موبایل و ورود به مرحله ثبت کد ملی، اگر کاربر بخواهد به مرحله قبل برگردد و شماره موبایل خود را تغییر دهد، به‌جای بازگشت به مرحله قبلی، از اپلیکیشن خارج می‌شود.</p>
+      <div class="flow" role="img" aria-label="مراحل ثبت‌نام">
+        <span class="node">شماره موبایل</span><span class="arr">←</span><span class="node here">ثبت کد ملی</span>
+      </div>
+      <ul class="states" aria-label="رفتار بازگشت">
+        <li class="info"><span class="st-key">انتظار</span><span class="st-val">بازگشت به مرحله قبلی</span></li>
+        <li class="no"><span class="st-key">رفتار فعلی</span><span class="st-val">خروج از اپلیکیشن</span></li>
+      </ul>
+      <p class="note"><b>پیامد</b><span>این رفتار امکان اصلاح اطلاعات واردشده را مختل می‌کند.</span></p>
+    </article>
+    <article class="finding" id="f21">
+      <div class="f-head"><span class="f-num">۲۱</span><div><span class="f-tag">دارایی‌ها</span><h3>جابه‌جایی آیکن نمایش/مخفی‌کردن موجودی</h3></div></div>
+      <p class="f-text">در صفحه دارایی‌ها، با کلیک روی آیکن چشم برای مخفی‌کردن دارایی، موقعیت آیکن کمی تغییر می‌کند.</p>
+      <p class="note"><b>پیامد</b><span>در نتیجه، اگر کاربر بخواهد چند بار متوالی روی همان نقطه کلیک کند، آیکن در موقعیت قبلی قرار ندارد و تعامل پشت‌سرهم دشوار می‌شود.</span></p>
+    </article>
+    <article class="finding" id="f22">
+      <div class="f-head"><span class="f-num">۲۲</span><div><span class="f-tag">Toast Message</span><h3>وجود علامت ضربدر غیرقابل‌استفاده در Toast Message</h3></div></div>
+      <p class="f-text">در Toast Message مربوط به قابلیت‌هایی که هنوز پشتیبانی نمی‌شوند، یک علامت ضربدر نمایش داده شده است. این علامت می‌تواند برای کاربر تداعی‌کننده یک دکمه بستن باشد، در حالی که عملکردی برای بستن Toast ندارد.</p>
+      <p class="note"><b>پیامد</b><span>این ناهماهنگی بین ظاهر عنصر و رفتار آن می‌تواند باعث سردرگمی کاربر شود.</span></p>
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Theme 6: finding 23 ============ -->
+<section class="slide" aria-labelledby="t6">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">دسته ۶</span>شفافیت اطلاعات مالی</div>
+    <h2 id="t6">رسید شارژ حساب</h2>
+    <span class="range">یافته ۲۳</span>
+  </header>
+  <div class="slide-body">
+    <article class="finding split" id="f23">
+      <div class="f-main">
+        <div class="f-head"><span class="f-num">۲۳</span><div><span class="f-tag">شارژ حساب · رسید</span><h3>نمایش ناقص شماره کارت مبدا در رسید شارژ حساب</h3></div></div>
+        <p class="f-text">در رسید شارژ حساب، چه در رسید نمایش‌داده‌شده داخل اپ و چه در پیامک، شماره کارت مبدا به‌صورت ۸ رقمی نمایش داده می‌شود؛ به‌طوری که پس از مخفی‌شدن اطلاعات، تنها چهار رقم قابل مشاهده باقی می‌ماند.</p>
+        <div class="compare two" role="img" aria-label="نحوه نمایش کارت مبدا">
+          <div class="cmp-cell"><span class="cmp-label">کارت مبدا در رسید</span><span class="cmp-value"><bdi dir="ltr">****-4906</bdi></span></div>
+          <div class="cmp-cell"><span class="cmp-label">ارقام قابل مشاهده</span><span class="cmp-value">چهار رقم</span></div>
+        </div>
+        <p class="note"><b>پیامد</b><span>این میزان از اطلاعات ممکن است برای کاربر کافی نباشد تا بتواند تشخیص دهد شارژ از کدام کارت انجام شده است.</span></p>
+      </div>
+      {{FIG:f23}}
+    </article>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+<!-- ============ Summary ============ -->
+<section class="slide" aria-labelledby="sum">
+  <header class="slide-head">
+    <div class="kicker"><span class="theme-no">جمع‌بندی</span></div>
+    <h2 id="sum">نکات کلیدی</h2>
+    <div class="totals"><span><strong>۲۳</strong> یافته</span><span><strong>۶</strong> دسته</span><span>داده و نمودار <strong>۴</strong></span><span><bdi>نام‌گذاری و UX Writing</bdi> <strong>۸</strong></span><span>فلوی معامله <strong>۵</strong></span><span>خطاها <strong>۲</strong></span><span>ناوبری و تعامل <strong>۳</strong></span><span>اطلاعات مالی <strong>۱</strong></span></div>
+  </header>
+  <div class="slide-body">
+    <ul class="patterns">
+      <li><p>داده‌هایی که به‌روز یا همگام نیستند، یا با محاسبه اولیه مغایرت دارند</p><span class="refs"><a href="#f1">۱</a><a href="#f2">۲</a><a href="#f15">۱۵</a></span></li>
+      <li><p>یک مفهوم یا مقدار با عنوان یا تعریف متفاوت در بخش‌های مختلف</p><span class="refs"><a href="#f6">۶</a><a href="#f7">۷</a></span></li>
+      <li><p>نمایش‌ها و قواعدی که منطق آن‌ها مشخص یا یکسان نیست</p><span class="refs"><a href="#f3">۳</a><a href="#f4">۴</a><a href="#f8">۸</a><a href="#f14">۱۴</a></span></li>
+      <li><p>پیام‌های خطایی که دیر نمایش داده می‌شوند یا علت واقعی وضعیت را منتقل نمی‌کنند</p><span class="refs"><a href="#f13">۱۳</a><a href="#f18">۱۸</a><a href="#f19">۱۹</a></span></li>
+      <li><p>مسیرهای بازگشتی که کاربر را به مرحله یا صفحه قبلی نمی‌برند</p><span class="refs"><a href="#f16">۱۶</a><a href="#f20">۲۰</a></span></li>
+      <li><p>تعامل‌هایی که دشوار شده‌اند یا رفتارشان با ظاهر عنصر همخوانی ندارد</p><span class="refs"><a href="#f17">۱۷</a><a href="#f21">۲۱</a><a href="#f22">۲۲</a></span></li>
+      <li><p>جزئیات نگارشی و واژه‌گزینی</p><span class="refs"><a href="#f5">۵</a><a href="#f9">۹</a><a href="#f10">۱۰</a><a href="#f11">۱۱</a><a href="#f12">۱۲</a></span></li>
+      <li><p>میزان اطلاعات نمایش‌داده‌شده از کارت مبدا در رسید</p><span class="refs"><a href="#f23">۲۳</a></span></li>
+    </ul>
+    <div class="review-box">
+      <h3>مواردی که در خود یافته‌ها نیازمند بررسی بیشتر ذکر شده‌اند</h3>
+      <ul>
+        <li><a href="#f4">۴</a><span>علت پوشش‌ندادن یک ماه کامل در نمودار یک‌ماهه</span></li>
+        <li><a href="#f12">۱۲</a><span>ضرورت نمایش کد کشور در شماره موبایل پروفایل</span></li>
+        <li><a href="#f19">۱۹</a><span>نحوه نمایش خطای کد ملی تکراری از نظر حریم خصوصی</span></li>
+      </ul>
+    </div>
+  </div>
+  <footer class="slide-foot"><span>بررسی اولیه UX اپلیکیشن ایساتیس</span><span class="pg"></span></footer>
+</section>
+
+</main>
+<script>
+(() => {
+  // Presenter keys: ←/PageDown = next slide, →/PageUp = previous (RTL order)
+  const slides = [...document.querySelectorAll(".slide")];
+  const current = () => {
+    let idx = 0, best = Infinity;
+    slides.forEach((el, i) => {
+      const d = Math.abs(el.getBoundingClientRect().top - 24);
+      if (d < best) { best = d; idx = i; }
+    });
+    return idx;
+  };
+  addEventListener("keydown", (e) => {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    const step = { ArrowLeft: 1, PageDown: 1, ArrowRight: -1, PageUp: -1 }[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const next = Math.max(0, Math.min(slides.length - 1, current() + step));
+    slides[next].scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+})();
+</script>
+</body>
+</html>
